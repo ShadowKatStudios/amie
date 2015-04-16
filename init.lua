@@ -8,7 +8,7 @@ s=bootfs.read(handle,math.huge)
 repeat
  c=c..s
  s=bootfs.read(handle,math.huge)
-until s==nil 0 -- tl;dr this loop reads the contents of the file into variable c
+until s==nil -- tl;dr this loop reads the contents of the file into variable c
 
 bootfs.close(handle) -- close the handle, as there is a limit (and memory!)
 

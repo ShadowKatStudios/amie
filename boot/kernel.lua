@@ -121,10 +121,10 @@ function fs.drive_map.vfs.list()
 end
 
 syscall("register","fs_resolve",function(path)
- syscall("log","Splitting path:")
+ -- syscall("log","Splitting path:") -- damn debug messages
  fields = string.split(path,"/")
  for k,v in pairs(fields) do
-  syscall("log",v)
+ --  syscall("log",v)
   if v == ".." then
    table.remove(fields,k)
    table.remove(fields,k-1)
@@ -162,6 +162,17 @@ syscall("register","fs_umount",function(index)
  fs.drive_map[index]=nil
 end)
 
+syscall("register","fs_mounts",function() -- returns a table of mounted drives and their proxies
+ return fs.drive_map
+end)
+
+syscall("register","fs_list",function(path)
+ drive,path = syscall("fs_resolve",path)
+ local t = syscall("fs_exec_on_drive",drive,"list",path)
+ t["n"] = nil
+ return t
+end)
+
 --sanity check, we could probably use one or two
 local testpath = "/boot/maybe/init.lua"
 local a,b=syscall("fs_resolve",testpath)
@@ -179,8 +190,18 @@ local t = syscall("fs_exec_on_drive","vfs","list","/")
 for k,v in pairs(t) do
  syscall("log",k.." : "..v)
 end
+-- sanity check: list again, for science
+syscall("log","Attempting to list /boot/ using the syscall as a sanity check")
+local t = syscall("fs_list","/boot/")
+for k,v in pairs(t) do
+ syscall("log",k.." : "..v)
+end
 
 -- both a useful test and a useful function: mount the temporary filesystem
 syscall("log","Mounting /temp/") -- heheheh
 syscall("fs_mount","temp",component.proxy(computer.tmpAddress()))
-syscall("log","/temp/ mounted successfully")
+syscall("log","/temp/ mounted successfully\nAttempting to list /temp/:")
+local t = syscall("fs_list","/temp/")
+for k,v in pairs(t) do
+ syscall("log",k.." : "..v)
+end
