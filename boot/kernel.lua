@@ -108,13 +108,15 @@ fs.drive_map["boot"]=component.proxy(computer.getBootAddress())
 fs.drive_map["vfs"]={}
 function fs.drive_map.vfs.list()
  syscall("log","VFS list called")
+ --[[
  local t = {}
  for k,v in pairs(fs.drive_map) do
   table.insert(t,k)
   syscall("log","VFS list magic: "..v)
  end
  t[n]=#t
- --return t
+ return t
+ ]]--
  return { "Fuck it, I don't need a fancy meta-VFS to make everything else, it's just stopping progress." }
 end
 
@@ -123,6 +125,13 @@ syscall("register","fs_resolve",function(path)
  fields = string.split(path,"/")
  for k,v in pairs(fields) do
   syscall("log",v)
+  if v == ".." then
+   table.remove(fields,k)
+   table.remove(fields,k-1)
+  end
+  if v == "." then
+   table.remove(fields,k)
+  end
  end
  local drive=table.remove(fields,1)
  if drive == nil or drive == "" then
@@ -144,6 +153,15 @@ syscall("register","fs_exec_on_drive",function(drive,method,...)
  return fs.drive_map[drive][method](...)
 end)
 
+-- dinner get
+
+syscall("register","fs_mount",function(index,proxy)
+ fs.drive_map[index]=proxy -- totally not my fault if you break the shit out of everything using this.
+end)
+syscall("register","fs_umount",function(index)
+ fs.drive_map[index]=nil
+end)
+
 --sanity check, we could probably use one or two
 local testpath = "/boot/maybe/init.lua"
 local a,b=syscall("fs_resolve",testpath)
@@ -162,3 +180,7 @@ for k,v in pairs(t) do
  syscall("log",k.." : "..v)
 end
 
+-- both a useful test and a useful function: mount the temporary filesystem
+syscall("log","Mounting /temp/") -- heheheh
+syscall("fs_mount","temp",component.proxy(computer.tmpAddress()))
+syscall("log","/temp/ mounted successfully")
