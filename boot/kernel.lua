@@ -12,12 +12,23 @@ function syscall(name,...)
  end
 end
 
+syscall("register","log", function(data)
+ local bootfs=component.proxy(computer.getBootAddress())
+ local handle=bootfs.open("system.log","a")
+ bootfs.write(handle,tostring(data) .. "\n")
+ bootfs.close(handle)
+end)
+
+syscall("log","Begin logging.")
+
 syscall("register","set_module_loaded", function(name)
  syscalls.lmods[name] = true
 end)
 syscall("register","set_module_unloaded", function(name)
  syscalls.lmods[name] = nil
 end)
+
+syscall("log","Module system initiated")
 
 local eventStack = {}
 local listeners = {}
@@ -59,6 +70,8 @@ syscall("register","event_push", function(...)
  computer.pushSignal(...)
 end)
 
+syscall("log","Event system initiated")
+
 syscall("register","writeln", function(...)
  local targ = {...}
  for k,v in pairs(targ) do
@@ -69,6 +82,8 @@ syscall("register","readln",function()
  text = syscall("event_pull","readln")
  return text
 end)
+
+syscall("log","Term I/O initiated")
 
 --Filesystem stuff, "fun"
 fs = {}
@@ -157,6 +172,8 @@ end)
 syscall("register","runfile", function(path,...)
  return syscall("loadfile",path)(...)
 end)
+
+syscall("log","Filesystem loaded, boot device: "..fs.drive_map[syscall("fs_get_drive")].address)
 
 -- actual init stuff \o/
 
