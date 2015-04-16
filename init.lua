@@ -1,6 +1,6 @@
 _G.bootaddr = computer.getBootAddress() -- get boot address, from Lua BIOS
 local bootfs = component.proxy(_G.bootaddr) -- assign that FS to local bootfs
-local handle = bootfs.open("/boot/kernel.lua","r") -- open a handle for boot/kernel.lua on that drive
+local handle = bootfs.open("/system/kernel.lua","r") -- open a handle for boot/kernel.lua on that drive
 
 -- read magics
 c=""
