@@ -21,6 +21,10 @@ syscall("register","log", function(data)
  bootfs.close(handle)
 end)
 
+function error(blah)
+ syscall("log",blah)
+end
+
 syscall("log","Begin logging.")
 
 syscall("register","set_module_loaded", function(name)
@@ -113,6 +117,8 @@ function string.cut(inputstr,len)
   return t
  end
 end
+
+syscall("log","String magic loaded.")
 
 --Filesystem stuff, "fun"
 fs = {}
@@ -213,35 +219,33 @@ end)
 
 -- and here's the big one
 
+syscall("log","fs_open up next!")
+
 syscall("register","fs_open", function(path,mode)
- local write_limit = 2048 -- write limit, this is the default max that can be written to a file in OC in one go
- if mode == nil then mode ="r" end
- local drive,path = syscall("fs_resolve",path)
- local handle = syscall("fs_exec_on_drive",drive,"open",mode)
- local returntable = {}
- returntable._drive = drive
- returntable._handle = handle
- returntable._self = returntable
- returntable._mode = mode
- function returntable.close()
-  syscall("fs_exec_on_drive",returntable._drive,"close",returntable._handle)
- end
- if returntable._mode == "r" then
-  function returntable.read(len)
-   return syscall("fs_exec_on_drive",returntable._drive,"read",returntable._handle,len)
-  end
- elseif returntable._mode == "w" or returntable._mode == "a" then
-  function returntable.write(data)
-   if tostring(data):len() > write_limit then
-    local t = string.cut(data,write_limit)
-    for k,v in ipairs(t) do
-     return syscall("fs_exec_on_drive",returntable._drive,"write",returntable._handle,v)
-    end
-   else
-    return syscall("fs_exec_on_drive",returntable._drive,"write",returntable._handle,data)
-   end
-  end
- end
+ drive,path = syscall("fs_resolve",path)
+ return {drive, syscall("fs_exec_on_drive",drive,"open",path,mode or "r")}
+end)
+
+syscall("register","fs_close", function(fobj)
+ return syscall("fs_exec_on_drive",fobj[1],"close",fobj[2])
+end)
+
+syscall("register","fs_read", function(fobj,len)
+ return syscall("fs_exec_on_drive",fobj[1],"read",fobj[2],len)
+end)
+
+syscall("register","fs_read_all", function(fobj)
+ local a = ""
+ s=syscall("fs_exec_on_drive",fobj[1],"read",fobj[2],math.huge)
+ repeat
+  a=a..s
+  s=syscall("fs_exec_on_drive",fobj[1],"read",fobj[2],math.huge)
+ until s == nil or s == ""
+ return a
+end)
+
+syscall("register","fs_write", function(fobj,data)
+ return syscall("fs_exec_on_drive",fobj[1],"write",fobj[2],data or "")
 end)
 
 -- both a useful test and a useful function: mount the temporary filesystem
