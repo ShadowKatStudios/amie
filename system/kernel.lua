@@ -248,6 +248,18 @@ syscall("register","fs_write", function(fobj,data)
  return syscall("fs_exec_on_drive",fobj[1],"write",fobj[2],data or "")
 end)
 
+syscall("register","loadfile",function(path)
+ local fobj = syscall("fs_open",path)
+ local c = load(syscall("fs_read_all",fobj))
+ syscall("fs_close",fobj)
+ return c
+end)
+syscall("register","runfile",function(path,...)
+ syscall("loadfile",path)(...)
+end)
+
 -- both a useful test and a useful function: mount the temporary filesystem
 syscall("log","Mounting /temp/") -- heheheh
 syscall("fs_mount","temp",component.proxy(computer.tmpAddress()))
+
+syscall("log",tostring(math.floor((computer.totalMemory()-computer.freeMemory())/1024)).."k memory used.")
