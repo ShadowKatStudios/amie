@@ -12,11 +12,11 @@ function syscall(name,...)
  end
 end
 
-component.proxy(computer.getBootAddress()).remove("/system.log") -- clean off the old system log
+component.proxy(computer.getBootAddress()).remove("/system/system.log") -- clean off the old system log
 
 syscall("register","log", function(data)
  local bootfs=component.proxy(computer.getBootAddress())
- local handle=bootfs.open("system.log","a")
+ local handle=bootfs.open("/system/system.log","a")
  bootfs.write(handle,tostring(data) .. "\n")
  bootfs.close(handle)
 end)
