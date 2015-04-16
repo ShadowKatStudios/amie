@@ -85,21 +85,39 @@ end)
 
 syscall("log","Term I/O initiated")
 
+-- testing, thanks stackoverflow
+
+function string.split(inputstr, sep)
+ if sep == nil then
+  sep = "%s"
+ end
+ local t={} ; i=1
+ for str in string.gmatch(inputstr, "([^"..sep.."]+)") do
+  t[i] = str
+  i = i + 1
+ end
+ return t
+end
+
 --Filesystem stuff, "fun"
 fs = {}
 fs.drive_map={}
 fs.drive_map["boot"]=component.proxy(computer.getBootAddress())
 
 syscall("register","fs_resolve",function(path)
- fields={}
- sep="/"
- str:gsub("([^"..sep.."]*)"..sep, function(c) table.insert(fields, c) end)
- local drive=table.remove(fields,1)
- local dpath = "/"
+ syscall("log","Splitting path:")
+ fields = string.split(path,"/")
  for k,v in pairs(fields) do
-  dpath=dpath.."/"..v
+  syscall("log",v)
+ end
+ drive=table.remove(fields,1)
+ dpath = ""
+ for k,v in pairs(fields) do
+  dpath = dpath .. "/" .. v
  end
  return drive,dpath
 end)
+local testpath = "/boot/maybe/init.lua"
+local a,b=syscall("fs_resolve",testpath)
+syscall("log","FS resolver init, sanity check: "..testpath.." resolves to drive ".. a .. " with path ".. b)
 
-syscall("log","Filesystem loaded, boot device: "..fs.drive_map[syscall("fs_get_drive")].address)
