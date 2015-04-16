@@ -100,6 +100,19 @@ function string.split(inputstr, sep)
  end
  return t
 end
+function string.cut(inputstr,len)
+ local inputstr = tostring(inputstr)
+ if inputstr:len() < len then
+  return {inputstr}
+ else
+  local t = {}
+  repeat
+   table.insert(t,string.sub(inputstr,1,len))
+   inputstr = string.sub(inputstr,len+1)
+  until inputstr == ""
+  return t
+ end
+end
 
 --Filesystem stuff, "fun"
 fs = {}
@@ -167,41 +180,70 @@ syscall("register","fs_mounts",function() -- returns a table of mounted drives a
 end)
 
 syscall("register","fs_list",function(path)
- drive,path = syscall("fs_resolve",path)
+ local drive,path = syscall("fs_resolve",path)
  local t = syscall("fs_exec_on_drive",drive,"list",path)
  t["n"] = nil
  return t
 end)
 
---sanity check, we could probably use one or two
-local testpath = "/boot/maybe/init.lua"
-local a,b=syscall("fs_resolve",testpath)
-syscall("log","FS resolver init, sanity check: "..testpath.." resolves to drive ".. a .. " with path ".. b)
--- fs_exec_on_drive test
-syscall("log","Attempting to list /boot/ as a sanity check:")
-local t = syscall("fs_exec_on_drive","boot","list","/")
-for k,v in pairs(t) do
- syscall("log",k.." : "..v)
-end
--- this is a bad idea, VFS listing, prepare for everything to crash
--- no crash, just shit all happening. Good to know.
-syscall("log","Attempting to list / as a sanity check:")
-local t = syscall("fs_exec_on_drive","vfs","list","/")
-for k,v in pairs(t) do
- syscall("log",k.." : "..v)
-end
--- sanity check: list again, for science
-syscall("log","Attempting to list /boot/ using the syscall as a sanity check")
-local t = syscall("fs_list","/boot/")
-for k,v in pairs(t) do
- syscall("log",k.." : "..v)
-end
+syscall("register","fs_exists",function(path)
+ local drive,path = syscall("fs_resolve",path)
+ return syscall("fs_exec_on_drive",drive,"exists",path)
+end)
+syscall("register","fs_size",function(path)
+ local drive,path = syscall("fs_resolve",path)
+ return syscall("fs_exec_on_drive",drive,"size",path)
+end)
+syscall("register","fs_is_directory",function(path)
+ local drive,path = syscall("fs_resolve",path)
+ return syscall("fs_exec_on_drive",drive,"isDirectory",path)
+end)
+syscall("register","fs_timestamp",function(path)
+ local drive,path = syscall("fs_resolve",path)
+ return syscall("fs_exec_on_drive",drive,"lastModified",path)
+end)
+syscall("register","fs_make_directory",function(path)
+ local  drive,path = syscall("fs_resolve",path)
+ return syscall("fs_exec_on_drive",drive,"makeDirectory",path)
+end)
+syscall("register","fs_make_directory",function(path)
+ local drive,path = syscall("fs_resolve",path)
+ return syscall("fs_exec_on_drive",drive,"remove",path)
+end)
+
+-- and here's the big one
+
+syscall("register","fs_open", function(path,mode)
+ local write_limit = 2048 -- write limit, this is the default max that can be written to a file in OC in one go
+ if mode == nil then mode ="r" end
+ local drive,path = syscall("fs_resolve",path)
+ local handle = syscall("fs_exec_on_drive",drive,"open",mode)
+ local returntable = {}
+ returntable._drive = drive
+ returntable._handle = handle
+ returntable._self = returntable
+ returntable._mode = mode
+ function returntable.close()
+  syscall("fs_exec_on_drive",returntable._drive,"close",returntable._handle)
+ end
+ if returntable._mode == "r" then
+  function returntable.read(len)
+   return syscall("fs_exec_on_drive",returntable._drive,"read",returntable._handle,len)
+  end
+ elseif returntable._mode == "w" or returntable._mode == "a" then
+  function returntable.write(data)
+   if tostring(data):len() > write_limit then
+    local t = string.cut(data,write_limit)
+    for k,v in ipairs(t) do
+     return syscall("fs_exec_on_drive",returntable._drive,"write",returntable._handle,v)
+    end
+   else
+    return syscall("fs_exec_on_drive",returntable._drive,"write",returntable._handle,data)
+   end
+  end
+ end
+end)
 
 -- both a useful test and a useful function: mount the temporary filesystem
 syscall("log","Mounting /temp/") -- heheheh
 syscall("fs_mount","temp",component.proxy(computer.tmpAddress()))
-syscall("log","/temp/ mounted successfully\nAttempting to list /temp/:")
-local t = syscall("fs_list","/temp/")
-for k,v in pairs(t) do
- syscall("log",k.." : "..v)
-end
