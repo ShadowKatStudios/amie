@@ -78,6 +78,12 @@ end)
 
 syscall("log","Event system initiated")
 
+syscall("register","write", function(...)
+ local targ = {...}
+ for k,v in pairs(targ) do
+  syscall("event_push","writeln",v)
+ end
+end)
 syscall("register","writeln", function(...)
  local targ = {...}
  for k,v in pairs(targ) do
