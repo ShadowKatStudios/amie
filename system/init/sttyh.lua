@@ -6,7 +6,7 @@ if component.list("gpu")() ~= nil and component.list("screen")() ~= nil then
  ttytab.w,ttytab.h=0,0
  ttytab.cstr = ""
  ttytab.stack={}
- function gpu_init()
+ local function gpu_init()
   ttytab.gpu=component.proxy(component.list("gpu")())
   ttytab.gpu.bind(component.list("screen")())
   ttytab.w, ttytab.h = ttytab.gpu.getResolution()
