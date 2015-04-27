@@ -47,14 +47,16 @@ if component.list("gpu")() ~= nil and component.list("screen")() ~= nil then
   cstr = cstr .. char
   redraw_text()
  end)
- syscall("event_listen","key",function(keycode)
-  if keycode == "<backspace>" then
+ syscall("event_listen","key_down",function(_,char,code,_)
+  if code == "<backspace>" then
    cstr = cstr.sub(1,cstr.len()-1)
    redraw_text()
-  elseif keycode == "<enter>" then
+  elseif code == "<enter>" then
    syscall("event_push","readlndone",cstr)
    cstr=""
    redraw_text()
+  else
+   cstr = cstr .. string.char(char)
   end
  end)
  syscall("event_listen","readlndone",function(str)
