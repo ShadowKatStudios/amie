@@ -26,14 +26,6 @@ if component.list("gpu")() ~= nil and component.list("screen")() ~= nil then
    end
   end
  end)
- syscall("event_listen","readln",function()
-  if #ttytab>0 then
-   return table.remove(ttytab.stack,1)
-  else
-   syscall("event_pull","readlndone")
-   return table.remove(ttytab.stack,1)
-  end
- end)
  local function redraw_text()
   local lineend = "_"
   local processed = cstr
@@ -60,6 +52,6 @@ if component.list("gpu")() ~= nil and component.list("screen")() ~= nil then
   end
  end)
  syscall("event_listen","readlndone",function(str)
-  table.insert(ttytab.stack,str)
+  syscall("event_push","readln",str)
  end)
 end
