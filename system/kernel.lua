@@ -78,16 +78,13 @@ end)
 
 syscall("log","Event system initiated")
 
+_G.writeFunctions = {}
 syscall("register","write", function(...)
  local targ = {...}
  for k,v in pairs(targ) do
-  syscall("event_push","writeln",v)
- end
-end)
-syscall("register","writeln", function(...)
- local targ = {...}
- for k,v in pairs(targ) do
-  syscall("event_push","writeln",v)
+  for j,w in pairs(writeFunctions) do
+   pcall(w,v)
+  end
  end
 end)
 syscall("register","readln",function()
@@ -270,7 +267,9 @@ syscall("fs_mount","temp",component.proxy(computer.tmpAddress()))
 
 syscall("log",tostring(math.floor((computer.totalMemory()-computer.freeMemory())/1024)).."k memory used.")
 
-for k,v in pairs(syscall("fs_list","/boot/system/init")) do
-syscall("log",v)
-syscall("runfile","/boot/system/init/"..v)
+while true do
+ for k,v in pairs(syscall("fs_list","/boot/system/init")) do
+  syscall("log",v)
+  syscall("runfile","/boot/system/init/"..v)
+ end
 end

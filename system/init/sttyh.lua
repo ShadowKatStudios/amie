@@ -15,12 +15,22 @@ if component.list("gpu")() ~= nil and component.list("screen")() ~= nil then
   ttytab.gpu.fill(1,1,ttytab.w,ttytab.h," ")
   ttytab.gpu.set(1,1,"█")
  end
+ function string_split(str)
+  local bT = {}
+  for a = 1, string.len(str)+1 do
+   table.insert(bT, string.sub(str,a,a))
+  end
+  return bT
+ end
  gpu_init()
  syscall("log","Found GPU and screen!")
- syscall("event_listen","writeln",function(v)
+ syscall("register","write",function(v)
   syscall("log","writing "..v)
-  for char in v:gmatch(".") do
+  bT = string_split(v)
+  syscall("log",#bT.." " .. type(ttytab.cx) .. " " .. type(ttytab.cy))
+  for k,char in ipairs(bT) do
    if char == "\n" then
+    ttytab.gpu.set(ttytab.cx,ttytab.cy," ")
     ttytab.cx,ttytab.cy = 1,ttytab.cy+1 -- go to next line, return to start of line
     syscall("log","newline!")
    elseif char == "\r" then
@@ -33,7 +43,9 @@ if component.list("gpu")() ~= nil and component.list("screen")() ~= nil then
     end
     syscall("log","backspace!")
    else
-    ttytab.gpu.set(ttytab.cx-1,ttytab,cy,char.."█ ")
+    syscall("log","Writing "..char.." to location "..ttytab.cx..","..ttytab.cy)
+    ttytab.gpu.set(ttytab.cx,ttytab.cy,char.."█ ")
+    ttytab.cx = ttytab.cx + 1
     syscall("log","wrote "..char)
    end
   end
