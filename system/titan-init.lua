@@ -13,8 +13,7 @@ function syscall() -- will be overwritten - or at least inaccessable
  }
  
  local tmp = component.proxy(computer.tmpAddress())
- local inet = component.proxy(component.list("internet")
- 
+ local inet = component.proxy(component.list("internet")())
  for k,v in ipairs(dirs) do
   tmp.makeDirectory(v)
   computer.beep()
