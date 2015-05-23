@@ -24,7 +24,7 @@ if component.list("gpu")() ~= nil and component.list("screen")() ~= nil then
  end
  gpu_init()
  syscall("log","Found GPU and screen!")
- syscall("register","write",function(v)
+ syscall("event_listen","writeln",function(v)
   syscall("log","writing "..v)
   bT = string_split(v)
   syscall("log",#bT.." " .. type(ttytab.cx) .. " " .. type(ttytab.cy))
