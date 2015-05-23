@@ -81,13 +81,8 @@ end)
 syscall("log","Event system initiated")
 
 _G.writeFunctions = {}
-syscall("register","write", function(...)
- local targ = {...}
- for k,v in pairs(targ) do
-  for j,w in pairs(writeFunctions) do
-   pcall(w,v)
-  end
- end
+syscall("register","writeln", function(...)
+ syscall("event_push","writeln",...)
 end)
 syscall("register","readln",function()
  text = syscall("event_pull","readln")
