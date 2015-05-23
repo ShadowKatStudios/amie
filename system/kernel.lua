@@ -73,7 +73,9 @@ syscall("register","event_pull", function(filter)
  end
 end)
 syscall("register","event_push", function(...)
+ local tEv = {...}
  computer.pushSignal(...)
+ syscall("event_pull",tEv[1])
 end)
 
 syscall("log","Event system initiated")
