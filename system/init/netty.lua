@@ -25,5 +25,5 @@ if component.list("modem")() ~= nil then
    until lnbuffer[1] ~= nil
    return table.remove(lnbuffer,1)
   end
- end
+ end)
 end
