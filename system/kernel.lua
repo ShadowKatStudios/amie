@@ -264,9 +264,9 @@ syscall("fs_mount","temp",component.proxy(computer.tmpAddress()))
 
 syscall("log",tostring(math.floor((computer.totalMemory()-computer.freeMemory())/1024)).."k memory used.")
 
-while true do
- for k,v in pairs(syscall("fs_list","/boot/system/init")) do
-  syscall("log",v)
-  syscall("runfile","/boot/system/init/"..v)
- end
+for k,v in pairs(syscall("fs_list","/boot/system/init")) do
+ syscall("log",v)
+ syscall("runfile","/boot/system/init/"..v)
 end
+
+syscall("runfile","/boot/system/shell.lua")
