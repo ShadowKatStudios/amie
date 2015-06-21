@@ -85,7 +85,7 @@ syscall("register","writeln", function(...)
  syscall("event_push","writeln",...)
 end)
 syscall("register","readln",function()
- text = syscall("event_pull","readln")
+ _,text = syscall("event_pull","readln")
  return text
 end)
 
