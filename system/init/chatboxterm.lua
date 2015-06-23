@@ -8,7 +8,12 @@ if component.list("chat_box")() ~= nil and _G.cbterm_loaded ~= true then
  local prefix=cfgfile:sub(1,lsp1-1)
  cbox.setDistance(tonumber(cfgfile:sub(lsp1+1)))
  syscall("event_listen","writeln",function(_,val)
-  cbox.say(val)
+  if val:find("\n") == nil then
+   cbox.say(val)
+  end
+  for line in val:gmatch("[^\r\n]+") do
+   cbox.say(line)
+  end
  end)
  syscall("event_listen","chat_message",function(_,_,user,msg)
   if msg:sub(1,prefix:len())==prefix then
