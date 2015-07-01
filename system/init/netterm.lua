@@ -25,6 +25,9 @@ if component.list("chat_box")() ~= nil and _G.cbterm_loaded ~= true then
    end
   elseif dat1 == "keypress" and dat2 == pass then
    buffer=buffer..dat3
+  elseif dat1 == "return" and dat2 == pass then
+   syscall("event_push","readln",buffer)
+   buffer = ""
   elseif dat1 == "unsub" then
    local nclients = {}
    for k,v in ipairs(sclients) do
