@@ -1,44 +1,24 @@
-syscalls = {}
-syscalls.lmods = {}
-function syscalls.register(name,callback)
- syscalls[name] = callback
-end
-function syscall(name,...)
- call = syscalls[name]
- if call then
-  return call(...)
- else
-  error("syscall failed: "..name)
- end
-end
-
 component.proxy(computer.getBootAddress()).remove("/system/system.log") -- clean off the old system log
 
-syscall("register","log", function(data)
+function log(data)
  local bootfs=component.proxy(computer.getBootAddress())
  local handle=bootfs.open("/system/system.log","a")
  bootfs.write(handle,tostring(data) .. "\n")
  bootfs.close(handle)
-end)
-
-function error(blah)
- syscall("log",blah)
 end
 
-syscall("log","Begin logging.")
+function error(blah)
+ log(blah)
+end
 
-syscall("register","set_module_loaded", function(name)
- syscalls.lmods[name] = true
-end)
-syscall("register","set_module_unloaded", function(name)
- syscalls.lmods[name] = nil
-end)
+log("amie DR0 starting.")
 
-syscall("log","Module system initiated")
+-- event code begins here, tame for now
+_G.event = {}
 
 local eventStack = {}
 local listeners = {}
-syscall("register","event_listen", function(evtype,callback)
+function event.listen(evtype,callback)
  if listeners[evtype] ~= nil then
   table.insert(listeners[evtype],callback)
   return #listeners
@@ -46,11 +26,11 @@ syscall("register","event_listen", function(evtype,callback)
   listeners[evtype] = {callback}
   return 1
  end
-end)
-syscall("register","event_ignore", function(evtype,id)
+end
+function event.ignore(evtype,id)
  table.remove(listeners[evtype],id)
-end)
-syscall("register","event_pull", function(filter)
+end
+function event.pull(filter)
  if not filter then return table.remove(eventStack,1)
  else
   for _,v in pairs(eventStack) do
@@ -71,29 +51,30 @@ syscall("register","event_pull", function(filter)
   until evtype == filter
   return evtype, table.unpack(t)
  end
-end)
-syscall("register","event_push", function(...)
+end
+function event.push(...)
  local tEv = {...}
  computer.pushSignal(...)
- syscall("event_pull",tEv[1])
-end)
+ event.pull(tEv[1])
+end
 
-syscall("log","Event system initiated")
+log("Event system loaded successfully")
+-- 'terminal' code begins here. heh.
 
-_G.writeFunctions = {}
-syscall("register","writeln", function(...)
- syscall("event_push","writeln",...)
-end)
-syscall("register","readln",function()
- _,text = syscall("event_pull","readln")
+function writeln(...)
+ event.push("writeln",...)
+end
+event.listen("readln",function()
+ _,text = event.pull("readln")
  return text
 end)
 
-syscall("log","Term I/O initiated")
+log("Term I/O events loaded successfully")
 
 -- testing, thanks stackoverflow
 -- gonna leave this in, methinks. Super-useful function.
 function string.split(inputstr, sep)
+ if inputstr == nil then return nil end
  if sep == nil then
   sep = "%s"
  end
@@ -118,32 +99,30 @@ function string.cut(inputstr,len)
  end
 end
 
-syscall("log","String magic loaded.")
+log("String magic loaded.")
 
---Filesystem stuff, "fun"
+--Filesystem stuff begins here, "fun"
 fs = {}
 fs.drive_map={}
 fs.drive_map["boot"]=component.proxy(computer.getBootAddress())
 fs.drive_map["vfs"]={}
 function fs.drive_map.vfs.list()
- syscall("log","VFS list called")
+ log("VFS list called")
  --[[
  local t = {}
  for k,v in pairs(fs.drive_map) do
   table.insert(t,k)
-  syscall("log","VFS list magic: "..v)
+  log("VFS list magic: "..v)
  end
  t[n]=#t
  return t
  ]]--
- return { "Fuck it, I don't need a fancy meta-VFS to make everything else, it's just stopping progress." }
+ return { "boot/", "temp/" } -- meaningful but hardcoded info ;-;
 end
 
-syscall("register","fs_resolve",function(path)
- -- syscall("log","Splitting path:") -- damn debug messages
+function fs.resolve(path)
  fields = string.split(path,"/")
  for k,v in pairs(fields) do
- --  syscall("log",v)
   if v == ".." then
    table.remove(fields,k)
    table.remove(fields,k-1)
@@ -164,109 +143,102 @@ syscall("register","fs_resolve",function(path)
   dpath = "/"
  end
  return drive,dpath
-end)
-
--- poptarts get
-
-syscall("register","fs_exec_on_drive",function(drive,method,...)
- return fs.drive_map[drive][method](...)
-end)
-
--- dinner get
-
-syscall("register","fs_mount",function(index,proxy)
- fs.drive_map[index]=proxy -- totally not my fault if you break the shit out of everything using this.
-end)
-syscall("register","fs_umount",function(index)
- fs.drive_map[index]=nil
-end)
-
-syscall("register","fs_mounts",function() -- returns a table of mounted drives and their proxies
- return fs.drive_map
-end)
-
-syscall("register","fs_list",function(path)
- local drive,path = syscall("fs_resolve",path)
- local t = syscall("fs_exec_on_drive",drive,"list",path)
- t["n"] = nil
- return t
-end)
-
-syscall("register","fs_exists",function(path)
- local drive,path = syscall("fs_resolve",path)
- return syscall("fs_exec_on_drive",drive,"exists",path)
-end)
-syscall("register","fs_size",function(path)
- local drive,path = syscall("fs_resolve",path)
- return syscall("fs_exec_on_drive",drive,"size",path)
-end)
-syscall("register","fs_is_directory",function(path)
- local drive,path = syscall("fs_resolve",path)
- return syscall("fs_exec_on_drive",drive,"isDirectory",path)
-end)
-syscall("register","fs_timestamp",function(path)
- local drive,path = syscall("fs_resolve",path)
- return syscall("fs_exec_on_drive",drive,"lastModified",path)
-end)
-syscall("register","fs_make_directory",function(path)
- local  drive,path = syscall("fs_resolve",path)
- return syscall("fs_exec_on_drive",drive,"makeDirectory",path)
-end)
-syscall("register","fs_make_directory",function(path)
- local drive,path = syscall("fs_resolve",path)
- return syscall("fs_exec_on_drive",drive,"remove",path)
-end)
-
--- and here's the big one
-
-syscall("log","fs_open up next!")
-
-syscall("register","fs_open", function(path,mode)
- drive,path = syscall("fs_resolve",path)
- return {drive, syscall("fs_exec_on_drive",drive,"open",path,mode or "r")}
-end)
-
-syscall("register","fs_close", function(fobj)
- return syscall("fs_exec_on_drive",fobj[1],"close",fobj[2])
-end)
-
-syscall("register","fs_read", function(fobj,len)
- return syscall("fs_exec_on_drive",fobj[1],"read",fobj[2],len)
-end)
-
-syscall("register","fs_read_all", function(fobj)
- local a = ""
- s=syscall("fs_exec_on_drive",fobj[1],"read",fobj[2],math.huge)
- repeat
-  a=a..s
-  s=syscall("fs_exec_on_drive",fobj[1],"read",fobj[2],math.huge)
- until s == nil or s == ""
- return a
-end)
-
-syscall("register","fs_write", function(fobj,data)
- return syscall("fs_exec_on_drive",fobj[1],"write",fobj[2],data or "")
-end)
-
-syscall("register","loadfile",function(path)
- local fobj = syscall("fs_open",path)
- local c = load(syscall("fs_read_all",fobj))
- syscall("fs_close",fobj)
- return c
-end)
-syscall("register","runfile",function(path,...)
- syscall("loadfile",path)(...)
-end)
-
--- both a useful test and a useful function: mount the temporary filesystem
-syscall("log","Mounting /temp/") -- heheheh
-syscall("fs_mount","temp",component.proxy(computer.tmpAddress()))
-
-syscall("log",tostring(math.floor((computer.totalMemory()-computer.freeMemory())/1024)).."k memory used.")
-
-for k,v in pairs(syscall("fs_list","/boot/system/init")) do
- syscall("log",v)
- syscall("runfile","/boot/system/init/"..v)
 end
 
-syscall("runfile","/boot/system/shell.lua")
+function fs.executeOnDrive(drive,method,...)
+ return fs.drive_map[drive][method](...)
+end
+
+function fs.mount(index,proxy)
+ fs.drive_map[index]=proxy -- totally not my fault if you break the shit out of everything using this.
+end
+function fs.umount(index)
+ fs.drive_map[index]=nil
+end
+
+function fs.mounts() -- returns a table of mounted drives and their proxies
+ return fs.drive_map
+end
+
+function fs.list(path)
+ local drive,path = fs.resolve(path)
+ local t = fs.executeOnDrive(drive,"list",path)
+ t["n"] = nil
+ return t
+end
+
+function fs.exists(path)
+ local drive,path = fs.resolve(path)
+ return fs.executeOnDrive(drive,"exists",path)
+end
+function fs.size(path)
+ local drive,path = fs.resolve(path)
+ return fs.executeOnDrive(drive,"size",path)
+end
+function fs.isDirectory(path)
+ local drive,path = fs.resolve(path)
+ return fs.executeOnDrive(drive,"isDirectory",path)
+end
+function fs.lastModified(path)
+ local drive,path = fs.resolve(path)
+ return fs.executeOnDrive(drive,"lastModified",path)
+end
+function fs.mkdir(path)
+ local drive,path = fs.resolve(path)
+ return fs.executeOnDrive(drive,"makeDirectory",path)
+end
+function fs.rmdir(path)
+ local drive,path = fs.resolve(path)
+ return fs.executeOnDrive(drive,"remove",path)
+end
+
+function fs.open(path,mode)
+ local drive,path = fs.resolve(path)
+ return {drive, fs.executeOnDrive(drive,"open",path,mode or "r")}
+end
+
+function fs.close(fobj)
+ return fs.executeOnDrive(fobj[1],"close",fobj[2])
+end
+
+function fs.read(fobj,len)
+ return fs.executeOnDrive(fobj[1],"read",fobj[2],len)
+end
+
+function fs.readAll(fobj)
+ local a = ""
+ s=fs.executeOnDrive(fobj[1],"read",fobj[2],math.huge)
+ repeat
+  a=a..s
+  s=fs.executeOnDrive(fobj[1],"read",fobj[2],math.huge)
+ until s == nil or s == ""
+ return a
+end
+
+function fs.write(fobj,data)
+ return fs.executeOnDrive(fobj[1],"write",fobj[2],data or "")
+end
+
+function loadfile(path)
+ local fobj = fs.open(path)
+ local c = load(fs.readAll(fobj))
+ fs.close(fobj)
+ return c
+end
+function runfile(path,...)
+ pcall(loadfile(path),...)
+end
+
+log("Mounting /temp/")
+fs.load("temp",component.proxy(computer.tmpAddress()))
+
+log(tostring(math.floor((computer.totalMemory()-computer.freeMemory())/1024)).."k memory used.")
+
+local initFiles = string.split(fs.readAll("/boot/system/config/init.cfg"))
+if initFiles = nil then initFiles = fs.list("/boot/system/init") -- fallback - load everything. Probably going to be default.
+for k,v in pairs(initFiles) do
+ log(v)
+ runfile("/boot/system/init/"..v)
+end
+
+runfile("/boot/system/shell.lua")
