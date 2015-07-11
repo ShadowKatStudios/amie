@@ -235,7 +235,7 @@ fs.load("temp",component.proxy(computer.tmpAddress()))
 log(tostring(math.floor((computer.totalMemory()-computer.freeMemory())/1024)).."k memory used.")
 
 local initFiles = string.split(fs.readAll("/boot/system/config/init.cfg"))
-if initFiles = nil then initFiles = fs.list("/boot/system/init") -- fallback - load everything. Probably going to be default.
+if initFiles == nil then initFiles = fs.list("/boot/system/init") end -- fallback - load everything. Probably going to be default.
 for k,v in pairs(initFiles) do
  log(v)
  runfile("/boot/system/init/"..v)
