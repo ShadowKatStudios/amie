@@ -6,18 +6,20 @@ if component.list("chat_box")() ~= nil and _G.cbterm_loaded ~= true then
   local cfgfile = fs.readAll(cfghnd)
   fs.close(cfghnd)
   local config = string.split(cfgfile,"\n")
-  local prefix=config[1]
+  prefix=config[1]
   cbox.setDistance(tonumber(config[2]))
+  log("Chatbox prefix set to "..prefix.." - distance set to " .. tostring(config[2]))
  else
-  local prefix="#!>"
+  prefix="#!>"
   cbox.setDistance(10)
  end
  event.listen("writeln",function(_,val)
   if val:find("\n") == nil then
    cbox.say(val)
-  end
-  for line in val:gmatch("[^\r\n]+") do
-   cbox.say(line)
+  else
+   for line in val:gmatch("[^\r\n]+") do
+    cbox.say(line)
+   end
   end
  end)
  event.listen("chat_message",function(_,_,user,msg)

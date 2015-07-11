@@ -64,17 +64,17 @@ log("Event system loaded successfully")
 function writeln(...)
  event.push("writeln",...)
 end
-event.listen("readln",function()
+function readln()
  _,text = event.pull("readln")
  return text
-end)
+end
 
 log("Term I/O events loaded successfully")
 
 -- testing, thanks stackoverflow
 -- gonna leave this in, methinks. Super-useful function.
 function string.split(inputstr, sep)
- if inputstr == nil then return nil end
+ if inputstr == nil then return {} end
  if sep == nil then
   sep = "%s"
  end
@@ -97,6 +97,14 @@ function string.cut(inputstr,len)
   until inputstr == ""
   return t
  end
+end
+
+function string.chars(str)
+ local bT = {}
+ for a = 1, string.len(str)+1 do
+  table.insert(bT, string.sub(str,a,a))
+ end
+ return bT
 end
 
 log("String magic loaded.")
@@ -230,15 +238,27 @@ function runfile(path,...)
 end
 
 log("Mounting /temp/")
-fs.load("temp",component.proxy(computer.tmpAddress()))
+fs.mount("temp",component.proxy(computer.tmpAddress()))
 
 log(tostring(math.floor((computer.totalMemory()-computer.freeMemory())/1024)).."k memory used.")
 
-local initFiles = string.split(fs.readAll("/boot/system/config/init.cfg"))
-if initFiles == nil then initFiles = fs.list("/boot/system/init") end -- fallback - load everything. Probably going to be default.
+local initFile = fs.open("/boot/system/config/init.cfg","r")
+if initFile == nil then
+ initFiles = fs.list("/boot/system/init") -- fallback - load everything. Probably going to be default.
+ log("init.cfg not found, running everything.")
+else
+ log("init.cfg found, running selected files")
+ log(type(initFile))
+ initFiles = string.split(fs.readAll(initFile),"\n")
+ log(type(initFiles))
+ fs.close(initFile)
+end
+log("Beginning init")
 for k,v in pairs(initFiles) do
  log(v)
  runfile("/boot/system/init/"..v)
 end
 
-runfile("/boot/system/shell.lua")
+while true do
+ runfile("/boot/system/shell.lua")
+end
