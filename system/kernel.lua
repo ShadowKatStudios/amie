@@ -55,7 +55,7 @@ end
 function event.push(...)
  local tEv = {...}
  computer.pushSignal(...)
- event.pull(tEv[1])
+-- event.pull(tEv[1])
 end
 
 log("Event system loaded successfully")
@@ -102,7 +102,8 @@ end
 function string.chars(str)
  local bT = {}
  for a = 1, string.len(str)+1 do
-  table.insert(bT, string.sub(str,a,a))
+--  table.insert(bT, string.sub(str,a,a))
+  bT[#bT+1] = string.sub(str,a,a)
  end
  return bT
 end

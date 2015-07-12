@@ -23,37 +23,32 @@ if component.list("gpu")() ~= nil and component.list("screen")() ~= nil then
   if char == "\n" then
    ttytab.gpu.set(ttytab.cx,ttytab.cy," ")
    ttytab.cx,ttytab.cy = 1,ttytab.cy+1 -- go to next line, return to start of line
-   log("newline!")
+   ttytab.gpu.set(ttytab.cx,ttytab.cy,"█ ")
   elseif char == "\r" then
    ttytab.gpu.set(ttytab.cx,ttytab.cy," ")
    ttytab.cx = 1 -- return to start of line
-   log("return!")
   elseif char == "\b" then
    if ttytab.cx > 1 then
     ttytab.cx = ttytab.cx - 1
---    ttytab.gpu.set(ttytab.cx,ttytab.cy,"█ ")
+    ttytab.gpu.set(ttytab.cx,ttytab.cy,"█ ")
    end
-   log("backspace!")
   elseif char == "\f" then
    ttytab.cx,ttytab.cy = 1,1
    gpu_init()
   else
-   log("Writing "..char.." (".. tostring(string.byte(char)) .. ") to location "..ttytab.cx..","..ttytab.cy)
---   ttytab.gpu.set(ttytab.cx,ttytab.cy,char.."█")
-   ttytab.gpu.set(ttytab.cx,ttytab.cy,char)
+   ttytab.gpu.set(ttytab.cx,ttytab.cy,char.."█ ")
    ttytab.cx = ttytab.cx + 1
-   log("wrote "..char.. " " .. tostring(string.byte(char)))
   end
  end)
  event.listen("writeln",function(_,str)
   log("Writing "..str)
   local strtab = string.chars(str.."\n")
-  for k,v in pairs(strtab) do
-   event.push("writeterm",v)
+  strtab[#strtab]=nil
+  for key,value in pairs(strtab) do
+   event.push("writeterm",value)
+   log("wrote "..value.. " " .. tostring(string.byte(value)))
   end
   log("Finished writing!")
  end)
- writeln("test\ntest2\b\ra")
- writeln(tostring((computer.totalMemory()-computer.freeMemory())/1024).. "\ntest\b\ntest\ra")
- event.push("writeterm","a")
+ writeln(tostring(math.floor((computer.totalMemory()-computer.freeMemory())/1024)).. "k Memory Used.")
 end
