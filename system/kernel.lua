@@ -235,7 +235,7 @@ function loadfile(path)
  return c
 end
 function runfile(path,...)
- pcall(loadfile(path),...)
+ return xpcall(loadfile(path),function() log(debug.traceback()) end,...)
 end
 
 log("Mounting /temp/")
@@ -249,9 +249,7 @@ if initFile == nil then
  log("init.cfg not found, running everything.")
 else
  log("init.cfg found, running selected files")
- log(type(initFile))
  initFiles = string.split(fs.readAll(initFile),"\n")
- log(type(initFiles))
  fs.close(initFile)
 end
 log("Beginning init")
@@ -261,5 +259,7 @@ for k,v in pairs(initFiles) do
 end
 
 while true do
- runfile("/boot/system/shell.lua")
+ for k,v in ipairs({runfile("/boot/system/shell.lua")}) do
+  log(v)
+ end
 end
